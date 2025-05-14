@@ -1,6 +1,6 @@
 [build]
   publish = "out"
-  command = "npm ci --include=dev && npm run build && npm run export"
+  command = "npm ci --include=dev && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
