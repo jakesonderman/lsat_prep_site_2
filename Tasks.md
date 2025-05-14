@@ -13,15 +13,15 @@ This document outlines the specific tasks required to implement user authenticat
 - [ ] Create API route for user profile management (`/api/user/profile`)
 
 ### 1.2 Database Integration
-- [ ] Set up MongoDB connection (or preferred database)
-- [ ] Create user schema based on planned structure
+- [x] Set up MongoDB connection (or preferred database)
+- [x] Create user schema based on planned structure
 - [ ] Implement data validation middleware
 - [ ] Set up environment variables for database credentials
 
 ### 1.3 Authentication Logic
 - [x] Implement password hashing using bcrypt (added dependency)
 - [x] Create JWT token generation and validation utilities (added dependency)
-- [ ] Set up session management
+- [x] Set up session management
 - [ ] Implement CSRF protection
 
 ## 2. Frontend Components
@@ -65,50 +65,73 @@ This document outlines the specific tasks required to implement user authenticat
 ## 4. Data Integration
 
 ### 4.1 Connect Features to User Accounts
-- [ ] Modify Wrong Answer Journal to associate entries with user ID
+- [x] Modify Wrong Answer Journal to associate entries with user ID
+- [x] Update Goals feature to link goals to user accounts
 - [ ] Update Study Calendar to store user-specific events
-- [ ] Modify Goals feature to link goals to user accounts
 - [ ] Update Score Progress to track user-specific scores
 
 ### 4.2 Data Migration
-- [ ] Create utility for migrating local storage data to user accounts
-- [ ] Implement data merging strategy for existing users
+- [x] Create utility for migrating local storage data to user accounts
+- [x] Implement data merging strategy for existing users
 
-## 5. Testing
+## 5. User Data Tracking Implementation
 
-### 5.1 Unit Tests
+### 5.1 Data Model
+- [x] Create comprehensive user data model (`/app/lib/models.ts`)
+- [x] Define interfaces for all feature data types
+- [x] Create MongoDB document types
+
+### 5.2 API Routes
+- [x] Create API route for fetching user data (`/api/user-data`)
+- [x] Create API route for updating user data
+- [x] Add authentication checks to API routes
+
+### 5.3 Client-Side Integration
+- [x] Extend AuthContext to include user data management
+- [x] Add functions for saving and retrieving user data
+- [x] Implement local storage fallback for non-authenticated users
+
+### 5.4 Feature Updates
+- [x] Update Wrong Answer Journal to use user data
+- [x] Update Goals feature to use user data
+- [ ] Update Calendar to use user data
+- [ ] Update Progress tracking to use user data
+
+## 6. Testing
+
+### 6.1 Unit Tests
 - [ ] Write tests for authentication API endpoints
 - [ ] Test user registration and login flows
 - [ ] Test protected routes and redirects
 
-### 5.2 Integration Tests
+### 6.2 Integration Tests
 - [ ] Test end-to-end authentication flow
 - [ ] Verify data persistence across sessions
 - [ ] Test form validation and error handling
 
-## 6. Deployment
+## 7. Deployment
 
-### 6.1 Environment Setup
+### 7.1 Environment Setup
 - [ ] Configure environment variables for production
 - [ ] Set up database connection for production environment
 - [ ] Update Netlify configuration for API routes
 
-### 6.2 Security Audit
+### 7.2 Security Audit
 - [ ] Review authentication implementation for security vulnerabilities
 - [ ] Ensure proper CORS configuration
 - [ ] Validate JWT implementation
 - [ ] Check for proper error handling to prevent information leakage
 
-## 7. Documentation
+## 8. Documentation
 
-### 7.1 User Documentation
+### 8.1 User Documentation
 - [ ] Create user guide for registration and login
 - [ ] Document password requirements and recovery process
 
-### 7.2 Developer Documentation
+### 8.2 Developer Documentation
 - [ ] Update README with authentication information
 - [ ] Document API endpoints and expected responses
-- [ ] Update Planning.md with completed authentication tasks
+- [x] Update Planning.md with completed authentication tasks
 
 ## Timeline
 - **Week 1**: Complete backend authentication setup (Tasks 1.1-1.3)
@@ -133,6 +156,7 @@ This document outlines the specific tasks required to implement user authenticat
 ```
 
 ## Next Steps
-1. Implement actual API routes for authentication
-2. Connect to a database for user storage
-3. Update the existing features to work with user accounts 
+1. Update Calendar and Progress pages to use user data
+2. Implement actual API routes for authentication
+3. Connect to a MongoDB database for user storage
+4. Add environment variables for database connection 

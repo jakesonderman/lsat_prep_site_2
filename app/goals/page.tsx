@@ -1,18 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, CheckCircle, Circle, Target, Calendar } from 'lucide-react'
-
-interface Goal {
-  id: string
-  title: string
-  description: string
-  category: 'daily' | 'weekly' | 'monthly' | 'test-day'
-  completed: boolean
-  dueDate?: string
-  createdDate: string
-}
+import { useAuth } from '../context/AuthContext'
+import { Goal } from '../lib/models'
 
 export default function Goals() {
+  const { user, userData, saveUserData, isAuthenticated } = useAuth()
   const [goals, setGoals] = useState<Goal[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [activeCategory, setActiveCategory] = useState<'all' | Goal['category']>('all')
@@ -31,14 +24,32 @@ export default function Goals() {
     { key: 'test-day', label: 'Test Day', icon: Target }
   ]
 
-  const addGoal = () => {
+  // Load goals from user data when available
+  useEffect(() => {
+    if (userData?.goals) {
+      setGoals(userData.goals)
+    }
+  }, [userData])
+
+  const addGoal = async () => {
     if (newGoal.title) {
-      setGoals(prev => [...prev, {
+      const newGoalItem: Goal = {
         id: Date.now().toString(),
         ...newGoal,
         completed: false,
         createdDate: new Date().toISOString().split('T')[0]
-      }])
+      }
+      
+      const updatedGoals = [...goals, newGoalItem]
+      setGoals(updatedGoals)
+      
+      // Save to user data if authenticated
+      if (isAuthenticated && userData) {
+        await saveUserData({
+          goals: updatedGoals
+        })
+      }
+      
       setNewGoal({
         title: '',
         description: '',
@@ -49,14 +60,32 @@ export default function Goals() {
     }
   }
 
-  const toggleGoal = (id: string) => {
-    setGoals(prev => prev.map(goal => 
+  const toggleGoal = async (id: string) => {
+    const updatedGoals = goals.map(goal => 
       goal.id === id ? { ...goal, completed: !goal.completed } : goal
-    ))
+    )
+    
+    setGoals(updatedGoals)
+    
+    // Save to user data if authenticated
+    if (isAuthenticated && userData) {
+      await saveUserData({
+        goals: updatedGoals
+      })
+    }
   }
 
-  const deleteGoal = (id: string) => {
-    setGoals(prev => prev.filter(goal => goal.id !== id))
+  const deleteGoal = async (id: string) => {
+    const updatedGoals = goals.filter(goal => goal.id !== id)
+    
+    setGoals(updatedGoals)
+    
+    // Save to user data if authenticated
+    if (isAuthenticated && userData) {
+      await saveUserData({
+        goals: updatedGoals
+      })
+    }
   }
 
   const filteredGoals = goals.filter(goal => 
@@ -121,6 +150,17 @@ export default function Goals() {
             )
           })}
         </div>
+
+        {/* User Status Message */}
+        {!isAuthenticated && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-800">
+              <strong>Note:</strong> You're not logged in. Your goals will be stored locally but won't be available across devices.
+              <a href="/auth/login" className="text-blue-600 ml-2 underline">Log in</a> or 
+              <a href="/auth/register" className="text-blue-600 ml-2 underline">register</a> to save your data.
+            </p>
+          </div>
+        )}
 
         {/* Goals List */}
         <div className="space-y-3">

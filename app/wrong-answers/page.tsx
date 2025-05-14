@@ -1,20 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Search, Filter } from 'lucide-react'
-
-interface WrongAnswer {
-  id: string
-  date: string
-  section: string
-  questionType: string
-  question: string
-  yourAnswer: string
-  correctAnswer: string
-  explanation: string
-  tags: string[]
-}
+import { useAuth } from '../context/AuthContext'
+import { WrongAnswer } from '../lib/models'
 
 export default function WrongAnswerJournal() {
+  const { user, userData, saveUserData, isAuthenticated } = useAuth()
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswer[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -31,9 +22,16 @@ export default function WrongAnswerJournal() {
 
   const sections = ['Reading Comprehension', 'Logical Reasoning', 'Analytical Reasoning']
 
-  const addWrongAnswer = () => {
+  // Load wrong answers from user data when available
+  useEffect(() => {
+    if (userData?.wrongAnswers) {
+      setWrongAnswers(userData.wrongAnswers)
+    }
+  }, [userData])
+
+  const addWrongAnswer = async () => {
     if (newAnswer.question && newAnswer.correctAnswer) {
-      setWrongAnswers(prev => [...prev, {
+      const newWrongAnswer: WrongAnswer = {
         id: Date.now().toString(),
         date: new Date().toLocaleDateString(),
         section: newAnswer.section,
@@ -43,7 +41,18 @@ export default function WrongAnswerJournal() {
         correctAnswer: newAnswer.correctAnswer,
         explanation: newAnswer.explanation,
         tags: newAnswer.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-      }])
+      }
+      
+      const updatedWrongAnswers = [...wrongAnswers, newWrongAnswer]
+      setWrongAnswers(updatedWrongAnswers)
+      
+      // Save to user data if authenticated
+      if (isAuthenticated && userData) {
+        await saveUserData({
+          wrongAnswers: updatedWrongAnswers
+        })
+      }
+      
       setNewAnswer({
         section: '',
         questionType: '',
@@ -134,6 +143,17 @@ export default function WrongAnswerJournal() {
           </select>
         </div>
 
+        {/* User Status Message */}
+        {!isAuthenticated && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-800">
+              <strong>Note:</strong> You're not logged in. Your wrong answers will be stored locally but won't be available across devices.
+              <a href="/auth/login" className="text-blue-600 ml-2 underline">Log in</a> or 
+              <a href="/auth/register" className="text-blue-600 ml-2 underline">register</a> to save your data.
+            </p>
+          </div>
+        )}
+
         {/* Wrong Answers List */}
         <div className="space-y-4">
           {filteredAnswers.map(answer => (
@@ -184,6 +204,14 @@ export default function WrongAnswerJournal() {
             </div>
           ))}
         </div>
+
+        {/* Empty State */}
+        {filteredAnswers.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            <p className="mb-2">No wrong answers found.</p>
+            <p>Start by adding your first wrong answer!</p>
+          </div>
+        )}
 
         {/* Add Form Modal */}
         {showAddForm && (

@@ -9,6 +9,8 @@ A digital notebook application for LSAT preparation, helping law school applican
 - **Wrong Answer Journal**: Document and analyze incorrect questions
 - **Goal Tracking**: Set and monitor LSAT preparation milestones
 - **Score Progress**: Visualize practice test score improvements
+- **User Authentication**: Register, log in, and manage your profile
+- **User Data Tracking**: Save your progress across devices and sessions
 
 ## Screenshots
 
@@ -21,6 +23,8 @@ A digital notebook application for LSAT preparation, helping law school applican
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
 - **Charts**: Recharts
+- **Authentication**: NextAuth.js, JWT
+- **Database**: MongoDB
 - **Deployment**: Netlify
 
 ## Getting Started
@@ -28,6 +32,17 @@ A digital notebook application for LSAT preparation, helping law school applican
 ### Prerequisites
 
 - Node.js 18+ and npm
+- MongoDB (for full functionality)
+
+### Environment Setup
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+```
 
 ### Installation
 
@@ -67,16 +82,27 @@ npm run deploy
 
 - `app/`: Next.js app directory
   - `components/`: Reusable UI components
+  - `context/`: React context providers
+  - `lib/`: Utility functions and models
+  - `api/`: API routes
+  - `auth/`: Authentication pages
   - `calendar/`: Study calendar feature
   - `wrong-answers/`: Wrong answer journal feature
   - `goals/`: Goal tracking feature
   - `progress/`: Score progress visualization
+  - `profile/`: User profile management
 - `public/`: Static assets
+
+## Data Persistence
+
+The application supports two modes of data persistence:
+
+1. **Authenticated Users**: Data is stored in MongoDB and synchronized across devices
+2. **Guest Users**: Data is stored in local storage and available only on the current device
 
 ## Roadmap
 
-- User authentication system
-- Data persistence with database integration
+- Complete authentication system
 - Study timer functionality
 - Practice test generator
 - Study group integration
@@ -103,4 +129,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Next.js](https://nextjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Lucide Icons](https://lucide.dev/)
-- [Recharts](https://recharts.org/) 
+- [Recharts](https://recharts.org/)
+- [NextAuth.js](https://next-auth.js.org/)
+- [MongoDB](https://www.mongodb.com/) 
