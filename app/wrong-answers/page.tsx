@@ -36,8 +36,13 @@ export default function WrongAnswerJournal() {
       setWrongAnswers(prev => [...prev, {
         id: Date.now().toString(),
         date: new Date().toLocaleDateString(),
-        tags: newAnswer.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        ...newAnswer
+        section: newAnswer.section,
+        questionType: newAnswer.questionType,
+        question: newAnswer.question,
+        yourAnswer: newAnswer.yourAnswer,
+        correctAnswer: newAnswer.correctAnswer,
+        explanation: newAnswer.explanation,
+        tags: newAnswer.tags.split(',').map(tag => tag.trim()).filter(Boolean)
       }])
       setNewAnswer({
         section: '',
