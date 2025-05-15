@@ -4,8 +4,16 @@ import { UserData } from '../../lib/models';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../lib/auth';
 
+// Check if we're in build phase
+const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
+
 // Get user data
 export async function GET(request: Request) {
+  // During build time, return a dummy response
+  if (isBuildTime) {
+    return NextResponse.json({ message: 'Build time - no MongoDB connection' });
+  }
+
   try {
     const session = await getServerSession(authOptions);
     
@@ -43,6 +51,11 @@ export async function GET(request: Request) {
 
 // Update user data
 export async function PUT(request: Request) {
+  // During build time, return a dummy response
+  if (isBuildTime) {
+    return NextResponse.json({ message: 'Build time - no MongoDB connection' });
+  }
+
   try {
     const session = await getServerSession(authOptions);
     

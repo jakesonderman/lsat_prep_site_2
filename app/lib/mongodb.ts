@@ -1,14 +1,20 @@
 import { MongoClient } from 'mongodb'
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MongoDB URI to .env.local')
+// Default URI for build time (will be replaced by actual URI at runtime)
+const uri = process.env.MONGODB_URI || 'mongodb://placeholder-for-build-time'
+
+// Only throw error in development, not during build
+if (!process.env.MONGODB_URI && process.env.NODE_ENV === 'development') {
+  console.warn('MongoDB URI not found. Please add your MongoDB URI to .env.local')
 }
 
-const uri = process.env.MONGODB_URI
 const options = {}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
+
+// Skip actual connection during build time
+const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
 
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value

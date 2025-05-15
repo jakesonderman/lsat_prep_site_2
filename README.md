@@ -131,4 +131,39 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Lucide Icons](https://lucide.dev/)
 - [Recharts](https://recharts.org/)
 - [NextAuth.js](https://next-auth.js.org/)
-- [MongoDB](https://www.mongodb.com/) 
+- [MongoDB](https://www.mongodb.com/)
+
+## Environment Variables
+
+This project requires the following environment variables:
+
+- `MONGODB_URI`: Your MongoDB connection string
+- `NEXTAUTH_SECRET`: A secret key for NextAuth.js authentication
+- `NEXTAUTH_URL`: The URL of your deployed site (in production)
+
+### Local Development
+
+Create a `.env.local` file in the root directory with these variables:
+
+```
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_nextauth_secret_key
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### Netlify Deployment
+
+When deploying to Netlify, add these environment variables in the Netlify dashboard:
+
+1. Go to your site settings in Netlify
+2. Navigate to "Build & deploy" > "Environment"
+3. Add the environment variables:
+   - `MONGODB_URI`
+   - `NEXTAUTH_SECRET`
+   - `NEXTAUTH_URL` (should be your Netlify site URL)
+
+## Deployment
+
+```
+npm run deploy
+``` 
