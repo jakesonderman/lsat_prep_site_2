@@ -1,5 +1,4 @@
 import React from 'react';
-import Navigation from './Navigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,7 +7,6 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navigation />
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
