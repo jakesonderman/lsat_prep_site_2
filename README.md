@@ -74,10 +74,6 @@ npm run build
 
 The site is configured for deployment on Netlify. Push to the main branch to trigger automatic deployment.
 
-```
-npm run deploy
-```
-
 ## Project Structure
 
 - `app/`: Next.js app directory
@@ -161,6 +157,8 @@ When deploying to Netlify, add these environment variables in the Netlify dashbo
    - `MONGODB_URI`
    - `NEXTAUTH_SECRET`
    - `NEXTAUTH_URL` (should be your Netlify site URL)
+
+The project uses the Netlify Next.js plugin to support server-side rendering and API routes required for authentication. The deployment configuration is specified in the `netlify.toml` file.
 
 ## Deployment
 

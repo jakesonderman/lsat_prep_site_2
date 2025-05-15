@@ -1,16 +1,15 @@
 [build]
-  publish = "out"
   command = "npm ci --include=dev && npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
   NEXT_PHASE = "phase-production-build"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Use the Next.js plugin for server-side rendering
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [context.production.environment]
   NODE_ENV = "production" 

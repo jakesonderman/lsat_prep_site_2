@@ -5,6 +5,12 @@ set -e
 
 echo "🚀 Starting deployment process..."
 
+# Install Netlify plugin if not already installed
+if ! grep -q "@netlify/plugin-nextjs" package.json; then
+    echo "📦 Installing Netlify Next.js plugin..."
+    npm install --save-dev @netlify/plugin-nextjs
+fi
+
 # Add all changes
 echo "📁 Adding files to git..."
 git add .
