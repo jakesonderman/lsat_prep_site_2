@@ -1,24 +1,26 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-
-interface StudyEvent {
-  id: string
-  date: string
-  title: string
-  type: 'goal' | 'assignment'
-  completed: boolean
-}
+import { useAuth } from '../context/AuthContext'
+import { CalendarEvent } from '../lib/models'
 
 export default function Calendar() {
+  const { user, userData, saveUserData, isAuthenticated } = useAuth()
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [events, setEvents] = useState<StudyEvent[]>([])
+  const [events, setEvents] = useState<CalendarEvent[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [newEvent, setNewEvent] = useState({
     title: '',
-    type: 'goal' as 'goal' | 'assignment',
-    date: ''
+    date: '',
+    category: 'goal'
   })
+
+  // Load calendar events from user data when available
+  useEffect(() => {
+    if (userData?.calendarEvents) {
+      setEvents(userData.calendarEvents)
+    }
+  }, [userData])
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -40,22 +42,46 @@ export default function Calendar() {
     })
   }
 
-  const addEvent = () => {
+  const addEvent = async () => {
     if (newEvent.title && newEvent.date) {
-      setEvents(prev => [...prev, {
+      const newCalendarEvent: CalendarEvent = {
         id: Date.now().toString(),
-        ...newEvent,
-        completed: false
-      }])
-      setNewEvent({ title: '', type: 'goal', date: '' })
+        title: newEvent.title,
+        date: newEvent.date,
+        category: newEvent.category
+      }
+      
+      const updatedEvents = [...events, newCalendarEvent]
+      setEvents(updatedEvents)
+      
+      // Save to user data if authenticated
+      if (isAuthenticated && userData) {
+        await saveUserData({
+          calendarEvents: updatedEvents
+        })
+      }
+      
+      setNewEvent({ title: '', date: '', category: 'goal' })
       setShowAddForm(false)
     }
   }
 
-  const toggleEvent = (id: string) => {
-    setEvents(prev => prev.map(event => 
-      event.id === id ? { ...event, completed: !event.completed } : event
-    ))
+  const toggleEvent = async (id: string) => {
+    const updatedEvents = events.map(event => 
+      event.id === id ? { 
+        ...event, 
+        completed: !('completed' in event ? event.completed : false) 
+      } : event
+    ) as CalendarEvent[]
+    
+    setEvents(updatedEvents)
+    
+    // Save to user data if authenticated
+    if (isAuthenticated && userData) {
+      await saveUserData({
+        calendarEvents: updatedEvents
+      })
+    }
   }
 
   const renderCalendarDays = () => {
@@ -82,10 +108,10 @@ export default function Calendar() {
                 key={event.id}
                 onClick={() => toggleEvent(event.id)}
                 className={`text-xs p-1 rounded cursor-pointer ${
-                  event.type === 'goal' 
+                  event.category === 'goal' 
                     ? 'bg-blue-100 text-blue-800' 
                     : 'bg-green-100 text-green-800'
-                } ${event.completed ? 'line-through opacity-60' : ''}`}
+                } ${('completed' in event && event.completed) ? 'line-through opacity-60' : ''}`}
               >
                 {event.title}
               </div>
@@ -124,6 +150,17 @@ export default function Calendar() {
           </button>
         </div>
 
+        {/* User Status Message */}
+        {!isAuthenticated && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-800">
+              <strong>Note:</strong> You're not logged in. Your calendar events will be stored locally but won't be available across devices.
+              <a href="/auth/login" className="text-blue-600 ml-2 underline">Log in</a> or 
+              <a href="/auth/register" className="text-blue-600 ml-2 underline">register</a> to save your data.
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-7 gap-0 mb-4">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="p-3 text-center font-semibold text-gray-700 bg-gray-50 border border-gray-200">
@@ -136,6 +173,7 @@ export default function Calendar() {
           {renderCalendarDays()}
         </div>
 
+        {/* Add Form Modal */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -149,8 +187,8 @@ export default function Calendar() {
                   className="w-full p-2 border border-gray-300 rounded-lg"
                 />
                 <select
-                  value={newEvent.type}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value as 'goal' | 'assignment' }))}
+                  value={newEvent.category}
+                  onChange={(e) => setNewEvent(prev => ({ ...prev, category: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-lg"
                 >
                   <option value="goal">Study Goal</option>

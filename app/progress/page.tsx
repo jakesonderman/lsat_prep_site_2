@@ -1,21 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { Plus, TrendingUp, BarChart3 } from 'lucide-react'
-
-interface TestScore {
-  id: string
-  date: string
-  score: number
-  reading: number
-  logic: number
-  analytical: number
-  testType: 'practice' | 'diagnostic' | 'official'
-  notes?: string
-}
+import { useAuth } from '../context/AuthContext'
+import { ScoreRecord } from '../lib/models'
 
 export default function Progress() {
-  const [scores, setScores] = useState<TestScore[]>([])
+  const { user, userData, saveUserData, isAuthenticated } = useAuth()
+  const [scores, setScores] = useState<ScoreRecord[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [viewType, setViewType] = useState<'line' | 'bar'>('line')
   const [newScore, setNewScore] = useState({
@@ -24,22 +16,39 @@ export default function Progress() {
     reading: '',
     logic: '',
     analytical: '',
-    testType: 'practice' as TestScore['testType'],
+    testType: 'practice',
     notes: ''
   })
 
-  const addScore = () => {
+  // Load scores from user data when available
+  useEffect(() => {
+    if (userData?.scoreRecords) {
+      setScores(userData.scoreRecords)
+    }
+  }, [userData])
+
+  const addScore = async () => {
     if (newScore.date && newScore.score) {
-      setScores(prev => [...prev, {
+      const newScoreRecord: ScoreRecord = {
         id: Date.now().toString(),
         date: newScore.date,
         score: parseInt(newScore.score),
-        reading: parseInt(newScore.reading) || 0,
-        logic: parseInt(newScore.logic) || 0,
-        analytical: parseInt(newScore.analytical) || 0,
-        testType: newScore.testType,
-        notes: newScore.notes
-      }].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()))
+        totalPossible: 180, // LSAT has a maximum score of 180
+        notes: `Reading: ${newScore.reading}, Logic: ${newScore.logic}, Analytical: ${newScore.analytical}, Type: ${newScore.testType}, Notes: ${newScore.notes}`,
+      }
+      
+      const updatedScores = [...scores, newScoreRecord].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      )
+      
+      setScores(updatedScores)
+      
+      // Save to user data if authenticated
+      if (isAuthenticated && userData) {
+        await saveUserData({
+          scoreRecords: updatedScores
+        })
+      }
       
       setNewScore({
         date: '',
@@ -67,18 +76,33 @@ export default function Progress() {
     return { current, highest, improvement, average }
   }
 
-  const chartData = scores.map(score => ({
-    date: new Date(score.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    score: score.score,
-    reading: score.reading,
-    logic: score.logic,
-    analytical: score.analytical
-  }))
+  // Parse section scores from notes field
+  const parseScoreDetails = (score: ScoreRecord) => {
+    if (!score.notes) return { reading: 0, logic: 0, analytical: 0, testType: 'practice' }
+    
+    const reading = parseInt(score.notes.match(/Reading: (\d+)/)?.[1] || '0')
+    const logic = parseInt(score.notes.match(/Logic: (\d+)/)?.[1] || '0')
+    const analytical = parseInt(score.notes.match(/Analytical: (\d+)/)?.[1] || '0')
+    const testType = score.notes.match(/Type: (\w+)/)?.[1] || 'practice'
+    
+    return { reading, logic, analytical, testType }
+  }
+
+  const chartData = scores.map(score => {
+    const details = parseScoreDetails(score)
+    return {
+      date: new Date(score.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      score: score.score,
+      reading: details.reading,
+      logic: details.logic,
+      analytical: details.analytical
+    }
+  })
 
   const sectionData = scores.length > 0 ? [
-    { section: 'Reading', average: Math.round(scores.reduce((sum, s) => sum + s.reading, 0) / scores.length) },
-    { section: 'Logic', average: Math.round(scores.reduce((sum, s) => sum + s.logic, 0) / scores.length) },
-    { section: 'Analytical', average: Math.round(scores.reduce((sum, s) => sum + s.analytical, 0) / scores.length) }
+    { section: 'Reading', average: Math.round(scores.reduce((sum, s) => sum + parseScoreDetails(s).reading, 0) / scores.length) },
+    { section: 'Logic', average: Math.round(scores.reduce((sum, s) => sum + parseScoreDetails(s).logic, 0) / scores.length) },
+    { section: 'Analytical', average: Math.round(scores.reduce((sum, s) => sum + parseScoreDetails(s).analytical, 0) / scores.length) }
   ] : []
 
   const stats = getStats()
@@ -118,6 +142,17 @@ export default function Progress() {
             <p className="text-2xl font-bold text-orange-900">{stats.average}</p>
           </div>
         </div>
+
+        {/* User Status Message */}
+        {!isAuthenticated && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-800">
+              <strong>Note:</strong> You're not logged in. Your score records will be stored locally but won't be available across devices.
+              <a href="/auth/login" className="text-blue-600 ml-2 underline">Log in</a> or 
+              <a href="/auth/register" className="text-blue-600 ml-2 underline">register</a> to save your data.
+            </p>
+          </div>
+        )}
 
         {/* Chart Controls */}
         <div className="flex justify-between items-center mb-4">
@@ -189,35 +224,40 @@ export default function Progress() {
         <div>
           <h2 className="text-lg font-semibold mb-4">Score History</h2>
           <div className="space-y-3">
-            {scores.map(score => (
-              <div key={score.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl font-bold text-purple-600">{score.score}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        score.testType === 'practice' ? 'bg-blue-100 text-blue-800' :
-                        score.testType === 'diagnostic' ? 'bg-orange-100 text-orange-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {score.testType}
-                      </span>
+            {scores.map(score => {
+              const details = parseScoreDetails(score)
+              return (
+                <div key={score.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl font-bold text-purple-600">{score.score}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          details.testType === 'practice' ? 'bg-blue-100 text-blue-800' :
+                          details.testType === 'diagnostic' ? 'bg-orange-100 text-orange-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {details.testType}
+                        </span>
+                      </div>
+                      <div className="flex space-x-4 mt-2 text-sm text-gray-600">
+                        <span>Reading: {details.reading}</span>
+                        <span>Logic: {details.logic}</span>
+                        <span>Analytical: {details.analytical}</span>
+                      </div>
+                      {score.notes && score.notes.includes('Notes: ') && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          {score.notes.split('Notes: ')[1]}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex space-x-4 mt-2 text-sm text-gray-600">
-                      <span>Reading: {score.reading}</span>
-                      <span>Logic: {score.logic}</span>
-                      <span>Analytical: {score.analytical}</span>
-                    </div>
-                    {score.notes && (
-                      <p className="text-sm text-gray-600 mt-2">{score.notes}</p>
-                    )}
+                    <span className="text-sm text-gray-500">
+                      {new Date(score.date).toLocaleDateString()}
+                    </span>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {new Date(score.date).toLocaleDateString()}
-                  </span>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -274,7 +314,7 @@ export default function Progress() {
                 </div>
                 <select
                   value={newScore.testType}
-                  onChange={(e) => setNewScore(prev => ({ ...prev, testType: e.target.value as TestScore['testType'] }))}
+                  onChange={(e) => setNewScore(prev => ({ ...prev, testType: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-lg"
                 >
                   <option value="practice">Practice Test</option>

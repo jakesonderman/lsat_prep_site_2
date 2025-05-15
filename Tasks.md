@@ -67,8 +67,8 @@ This document outlines the specific tasks required to implement user authenticat
 ### 4.1 Connect Features to User Accounts
 - [x] Modify Wrong Answer Journal to associate entries with user ID
 - [x] Update Goals feature to link goals to user accounts
-- [ ] Update Study Calendar to store user-specific events
-- [ ] Update Score Progress to track user-specific scores
+- [x] Update Study Calendar to store user-specific events
+- [x] Update Score Progress to track user-specific scores
 
 ### 4.2 Data Migration
 - [x] Create utility for migrating local storage data to user accounts
@@ -94,8 +94,8 @@ This document outlines the specific tasks required to implement user authenticat
 ### 5.4 Feature Updates
 - [x] Update Wrong Answer Journal to use user data
 - [x] Update Goals feature to use user data
-- [ ] Update Calendar to use user data
-- [ ] Update Progress tracking to use user data
+- [x] Update Calendar to use user data
+- [x] Update Progress tracking to use user data
 
 ## 6. Testing
 
@@ -156,7 +156,11 @@ This document outlines the specific tasks required to implement user authenticat
 ```
 
 ## Next Steps
-1. Update Calendar and Progress pages to use user data
+1. ✅ Update Calendar and Progress pages to use user data
 2. Implement actual API routes for authentication
 3. Connect to a MongoDB database for user storage
 4. Add environment variables for database connection 
+
+## Discovered During Work
+- Fixed Netlify deployment issues with package dependencies
+- Added necessary functionality to save user calendar and score data consistently 
