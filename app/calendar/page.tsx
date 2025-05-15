@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, X, Edit } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { CalendarEvent } from '../lib/models'
 
@@ -9,10 +9,13 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: '',
-    category: 'goal'
+    category: 'goal',
+    description: ''
   })
 
   // Load calendar events from user data when available
@@ -48,7 +51,8 @@ export default function Calendar() {
         id: Date.now().toString(),
         title: newEvent.title,
         date: newEvent.date,
-        category: newEvent.category
+        category: newEvent.category,
+        description: newEvent.description
       }
       
       const updatedEvents = [...events, newCalendarEvent]
@@ -61,19 +65,37 @@ export default function Calendar() {
         })
       }
       
-      setNewEvent({ title: '', date: '', category: 'goal' })
-      setShowAddForm(false)
+      resetFormAndClose()
     }
   }
 
-  const toggleEvent = async (id: string) => {
-    const updatedEvents = events.map(event => 
-      event.id === id ? { 
-        ...event, 
-        completed: !('completed' in event ? event.completed : false) 
-      } : event
-    ) as CalendarEvent[]
-    
+  const updateEvent = async () => {
+    if (selectedEvent && newEvent.title && newEvent.date) {
+      const updatedEvents = events.map(event => 
+        event.id === selectedEvent.id ? { 
+          ...event, 
+          title: newEvent.title,
+          date: newEvent.date,
+          category: newEvent.category,
+          description: newEvent.description
+        } : event
+      )
+      
+      setEvents(updatedEvents)
+      
+      // Save to user data if authenticated
+      if (isAuthenticated && userData) {
+        await saveUserData({
+          calendarEvents: updatedEvents
+        })
+      }
+      
+      resetFormAndClose()
+    }
+  }
+
+  const deleteEvent = async (id: string) => {
+    const updatedEvents = events.filter(event => event.id !== id)
     setEvents(updatedEvents)
     
     // Save to user data if authenticated
@@ -82,6 +104,27 @@ export default function Calendar() {
         calendarEvents: updatedEvents
       })
     }
+    
+    resetFormAndClose()
+  }
+
+  const resetFormAndClose = () => {
+    setNewEvent({ title: '', date: '', category: 'goal', description: '' })
+    setSelectedEvent(null)
+    setShowAddForm(false)
+    setIsEditing(false)
+  }
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event)
+    setNewEvent({
+      title: event.title,
+      date: event.date,
+      category: event.category,
+      description: event.description || ''
+    })
+    setShowAddForm(true)
+    setIsEditing(true)
   }
 
   const renderCalendarDays = () => {
@@ -106,7 +149,7 @@ export default function Calendar() {
             {dayEvents.map(event => (
               <div 
                 key={event.id}
-                onClick={() => toggleEvent(event.id)}
+                onClick={() => handleEventClick(event)}
                 className={`text-xs p-1 rounded cursor-pointer ${
                   event.category === 'goal' 
                     ? 'bg-blue-100 text-blue-800' 
@@ -130,7 +173,10 @@ export default function Calendar() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Study Calendar</h1>
           <button
-            onClick={() => setShowAddForm(true)}
+            onClick={() => {
+              resetFormAndClose();
+              setShowAddForm(true);
+            }}
             className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -173,11 +219,16 @@ export default function Calendar() {
           {renderCalendarDays()}
         </div>
 
-        {/* Add Form Modal */}
+        {/* Add/Edit Form Modal */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold mb-4">Add Study Event</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">{isEditing ? 'Edit Event' : 'Add Study Event'}</h3>
+                <button onClick={resetFormAndClose} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               <div className="space-y-4">
                 <input
                   type="text"
@@ -200,19 +251,44 @@ export default function Calendar() {
                   onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-lg"
                 />
+                <textarea
+                  placeholder="Description (optional)"
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg h-24 resize-none"
+                ></textarea>
                 <div className="flex space-x-3">
-                  <button
-                    onClick={addEvent}
-                    className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-                  >
-                    Add Event
-                  </button>
-                  <button
-                    onClick={() => setShowAddForm(false)}
-                    className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={updateEvent}
+                        className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+                      >
+                        Update Event
+                      </button>
+                      <button
+                        onClick={() => selectedEvent && deleteEvent(selectedEvent.id)}
+                        className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={addEvent}
+                        className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+                      >
+                        Add Event
+                      </button>
+                      <button
+                        onClick={resetFormAndClose}
+                        className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
