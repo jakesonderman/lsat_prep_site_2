@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
-import { Plus, TrendingUp, BarChart3 } from 'lucide-react'
+import { Plus, TrendingUp, BarChart3, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ScoreRecord } from '../lib/models'
 
@@ -60,6 +60,18 @@ export default function Progress() {
         notes: ''
       })
       setShowAddForm(false)
+    }
+  }
+
+  const deleteScore = async (id: string) => {
+    const updatedScores = scores.filter(score => score.id !== id)
+    setScores(updatedScores)
+    
+    // Save to user data if authenticated
+    if (isAuthenticated && userData) {
+      await saveUserData({
+        scoreRecords: updatedScores
+      })
     }
   }
 
@@ -227,7 +239,14 @@ export default function Progress() {
             {scores.map(score => {
               const details = parseScoreDetails(score)
               return (
-                <div key={score.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div key={score.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+                  <button 
+                    onClick={() => deleteScore(score.id)}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-100"
+                    aria-label="Delete score record"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center space-x-3">
@@ -251,7 +270,7 @@ export default function Progress() {
                         </p>
                       )}
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 mr-6">
                       {new Date(score.date).toLocaleDateString()}
                     </span>
                   </div>
@@ -272,7 +291,15 @@ export default function Progress() {
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold mb-4">Add Test Score</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Add Test Score</h3>
+                <button 
+                  onClick={() => setShowAddForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               <div className="space-y-4">
                 <input
                   type="date"

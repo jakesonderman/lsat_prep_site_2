@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search, Filter, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { WrongAnswer } from '../lib/models'
 
@@ -63,6 +63,18 @@ export default function WrongAnswerJournal() {
         tags: ''
       })
       setShowAddForm(false)
+    }
+  }
+
+  const deleteWrongAnswer = async (id: string) => {
+    const updatedWrongAnswers = wrongAnswers.filter(answer => answer.id !== id)
+    setWrongAnswers(updatedWrongAnswers)
+    
+    // Save to user data if authenticated
+    if (isAuthenticated && userData) {
+      await saveUserData({
+        wrongAnswers: updatedWrongAnswers
+      })
     }
   }
 
@@ -157,7 +169,14 @@ export default function WrongAnswerJournal() {
         {/* Wrong Answers List */}
         <div className="space-y-4">
           {filteredAnswers.map(answer => (
-            <div key={answer.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div key={answer.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+              <button 
+                onClick={() => deleteWrongAnswer(answer.id)}
+                className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-100"
+                aria-label="Delete wrong answer"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">
@@ -167,7 +186,7 @@ export default function WrongAnswerJournal() {
                     {answer.questionType}
                   </span>
                 </div>
-                <span className="text-sm text-gray-500">{answer.date}</span>
+                <span className="text-sm text-gray-500 mr-6">{answer.date}</span>
               </div>
               
               <div className="space-y-2">
@@ -217,7 +236,15 @@ export default function WrongAnswerJournal() {
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4">Add Wrong Answer</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Add Wrong Answer</h3>
+                <button 
+                  onClick={() => setShowAddForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <select
